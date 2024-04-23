@@ -102,17 +102,29 @@ public class Block implements Cloneable {
 
     public Block permutation(int[] permutation) {
         //TODO
-        return null;
+        boolean[] result = this.block.clone();
+        for (int i = 0; i < permutation.length; i++) {
+            result[i] = this.block[permutation[i] - 1];
+        }
+        return new Block(result);
     }
 
     public Block xOr(Block secondMember) {
         //TODO
-        return null;
+        boolean[] result = this.block.clone();
+        for (int i = 0; i < this.block.length; i++) {
+            result[i] = this.block[i] ^ secondMember.block[i];
+        }
+        return new Block(result);
     }
 
     public Block leftShift(int nbrShift) {
         //TODO
-        return null;
+        boolean[] result = this.block.clone();
+        for (int i = 0; i < this.block.length; i++) {
+            result[i] = this.block[(i + nbrShift) % this.block.length];
+        }
+        return new Block(result);
     }
 
     public int rowValue() {
@@ -137,5 +149,13 @@ public class Block implements Cloneable {
             }
         }
         return toReturn;
+    }
+
+    public static void main(String[] args) {
+        Block block = new Block("0101101010");
+        System.out.println(block);
+        System.out.println("Permutation : " + block.permutation(new int[]{3, 5, 2, 7, 4, 10, 1, 9, 8, 6}));
+        System.out.println("XOR : " + block.xOr(new Block("1111111111")));
+        System.out.println("Left Shift : " + block.leftShift(1));
     }
 }
