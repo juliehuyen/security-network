@@ -1,5 +1,7 @@
 package com.dauphine.security.tp1;
 
+import static java.lang.Integer.toBinaryString;
+
 public class SBox {
     private int[][] matrix;
 
@@ -15,6 +17,6 @@ public class SBox {
 
     public Block cypher(Block toCypher) {
         //TODO
-        return null;
+        return new Block(toBinaryString(matrix[toCypher.rowValue()][toCypher.columnValue()]));
     }
 }

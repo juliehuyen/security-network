@@ -157,5 +157,8 @@ public class Block implements Cloneable {
         System.out.println("Permutation : " + block.permutation(new int[]{3, 5, 2, 7, 4, 10, 1, 9, 8, 6}));
         System.out.println("XOR : " + block.xOr(new Block("1111111111")));
         System.out.println("Left Shift : " + block.leftShift(1));
+
+        System.out.println("Row Value : " + block.rowValue());
+        System.out.println("Column Value : " + block.columnValue());
     }
 }
