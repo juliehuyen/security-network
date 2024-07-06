@@ -45,47 +45,40 @@ class CMAC {
 
     public byte[] authentify(byte[] message) throws Exception {
         byte[] res = new byte[16];
-        byte[] iIterationsMessage = new byte[16];
+        byte[] block = new byte[16];
 
-        Cipher cipher = Cipher.getInstance("AES/CBC/NoPadding");
+        Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
-        int iterations = message.length / 16;
+
+        int iterations = (message.length + 15) / 16; // round up to the next multiple of 16
+
         for (int i = 0; i < iterations; i++) {
+            int blockStart = i * 16;
             for (int j = 0; j < 16; j++) {
-                iIterationsMessage[j] = message[i * 16 + j];
-            }
-            if (i != 0) {
-                for (int j = 0; j < 16; j++) {
-                    iIterationsMessage[j] = (byte) (message[i * 16 + j] ^ res[j]);
+                if (blockStart + j < message.length) {
+                    block[j] = message[blockStart + j];
+                } else {
+                    block[j] = 0;
+                }
+                if (i != 0) {
+                    block[j] ^= res[j];
                 }
             }
-            for (int j = 0; j < 16; j++) {
-                res[j] = cipher.doFinal(iIterationsMessage)[j];
-            }
+            res = cipher.doFinal(block);
         }
 
         if (message.length % 16 == 0) {
             for (int j = 0; j < 16; j++) {
-                byte b = iIterationsMessage[(iterations - 1) * 16 + j];
-                byte b1 = k1[j];
-                byte b2 = res[j];
-                res[j] = (byte) (b ^ b1 ^ b2);
+                res[j] ^= k1[j];
             }
-
         } else {
-            int difference = message.length - iterations * 16;
-            byte[] paddingMessage = new byte[16];
-            for (int i = 0; i < difference; i++) {
-                paddingMessage[i] =
-                        message[(iterations - 1) * 16 + i];
-            }
-            paddingMessage[difference + 1] = (byte) 0x80;
-            for (int i = difference + 2; i < 16 - difference - 1; i++) {
-                paddingMessage[i] = 0;
-            }
-
-            for (int j = iterations * 16; j < message.length; j++) {
-                res[j] = (byte) (paddingMessage[iterations * 16 + j] ^ k2[j] ^ res[j]);
+            int remainder = message.length % 16;
+            byte[] paddingBlock = new byte[16];
+            System.arraycopy(message, message.length - remainder, paddingBlock, 0, remainder);
+            paddingBlock[remainder] = (byte) 0x80;
+            for (int j = 0; j < 16; j++) {
+                paddingBlock[j] ^= k2[j];
+                res[j] ^= paddingBlock[j];
             }
         }
 

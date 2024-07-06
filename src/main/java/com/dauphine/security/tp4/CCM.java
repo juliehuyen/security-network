@@ -1,5 +1,6 @@
 package com.dauphine.security.tp4;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -101,15 +102,49 @@ public class CCM {
     }
 
     public byte[] tag(byte[] nonce, byte[] assData, byte[] plaintext, int tlen) throws Exception {
-        return null;//TODO
+        byte[] input = formatedTagInput(nonce, assData, plaintext, tlen);
+        byte[] tag = new byte[tlen];
+        CMAC cmac = new CMAC(key);
+        tag = cmac.authentify(input);
+        return tag;
     }
 
     public byte[] encryptGenerate(byte[] nonce, byte[] assData, byte[] plaintext, int tlen) throws Exception {
-        return null;//TODO
+        byte[] tag = tag(nonce, assData, plaintext, tlen);
+        IvParameterSpec counter = formatedCounter(nonce);
+        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+        cipher.init(Cipher.ENCRYPT_MODE, key, counter);
+        byte[] cyphertext = cipher.doFinal(plaintext);
+        byte[] cyphertextTag = new byte[cyphertext.length + tag.length];
+        for (int i = 0; i < cyphertext.length; i++) {
+            cyphertextTag[i] = cyphertext[i];
+        }
+        for (int i = 0; i < tag.length; i++) {
+            cyphertextTag[i + cyphertext.length] = tag[i];
+        }
+        return cyphertextTag;
     }
 
     public byte[] decryptVerify(byte[] nonce, byte[] assData, byte[] cyphertext, int tlen) throws Exception {
-        return null; //TODO
+        byte[] tag = new byte[tlen];
+        for (int i = 0; i < tlen; i++) {
+            tag[i] = cyphertext[cyphertext.length - tlen + i];
+        }
+        byte[] cyphertextWithoutTag = new byte[cyphertext.length - tlen];
+        for (int i = 0; i < cyphertextWithoutTag.length; i++) {
+            cyphertextWithoutTag[i] = cyphertext[i];
+        }
+        byte[] tag2 = tag(nonce, assData, cyphertextWithoutTag, tlen);
+        for (int i = 0; i < tlen; i++) {
+            if (tag[i] != tag2[i]) {
+                return new byte[16];
+            }
+        }
+        IvParameterSpec counter = formatedCounter(nonce);
+        Cipher cipher = Cipher.getInstance("AES/CTR/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, key, counter);
+        byte[] plaintext = cipher.doFinal(cyphertextWithoutTag);
+        return plaintext;
     }
 
     public static void main(String[] args) {
@@ -121,7 +156,7 @@ public class CCM {
         SecretKey secretKey2 = new SecretKeySpec(keyBytes2, "AES");
         try {
             CMAC cmac = new CMAC(secretKey);
-            byte[] messageByte = new byte[0];
+            byte[] messageByte = new byte[16];
             byte[] macValue = cmac.authentify(messageByte);
             System.out.println(byteArrayToHexString(macValue));
             String message = "6BC1BEE22E409F96E93D7E117393172A";
